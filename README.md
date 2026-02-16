@@ -1,4 +1,3 @@
-# Local_LLM
 # 로컬 LLM 설치 가이드 (Claude AI 대안)
 
 Claude AI를 로컬 환경에서 실행할 수 있는 대안 솔루션 가이드입니다.
