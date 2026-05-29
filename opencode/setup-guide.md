@@ -432,6 +432,12 @@ nvidia-smi -l 1
 wget -O models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
 ```
 
+```
+./build/bin/llama-bench \
+    -m ./models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf \
+    -ngl 99 \
+    -n 128
+```
 
 출력 예시:
 ```
