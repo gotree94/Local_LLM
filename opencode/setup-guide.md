@@ -702,69 +702,67 @@ ollama pull llama3.1:8b
 
 >**추후 시스템을 재부팅하거나 설정이 꼬였을 때 언제든 참고하여 자가 정비하실 수 있도록**, <br>원인 분석부터 최종 해결까지의 디버깅 과정을 한눈에 보는 마크다운(.md) 문서로 일목요연하게 정리해 드립니다.
 
-# 🛠️ Open WebUI - Ollama 연동 실패 해결 및 디버깅 가이드
+# 🛠️ Open WebUI - Ollama 연동 실패 해결 및 디버깅 가이드 (Host Network 편)
 
-본 문서는 **RTX 5090 (VRAM 24GB)** 리눅스(Ubuntu) 환경에서 Docker 기반의 **Open WebUI**가 호스트의 **Ollama** 백엔드 엔진을 인식하지 못하고 `Server Connection Error` 및 모델 미설정 오류가 발생했을 때의 해결 과정을 기록한 트러블슈팅 가이드입니다.
+본 문서는 **RTX 5090 (VRAM 24GB)** 리눅스(Ubuntu) 환경에서 Docker 기반의 **Open WebUI**가 호스트의 **Ollama** 백엔드 엔진을 인식하지 못하고 `Server Connection Error`가 발생했을 때, 공식 문서 가이드에 따라 **호스트 네트워크 모드**로 해결한 과정을 기록한 트러블슈팅 가이드입니다.
 
 ---
 
 ## 🔍 1. 발생했던 문제 및 원인 분석
 
 ### 현상
-* `docker compose up -d`로 Open WebUI는 정상 구동되어 `http://localhost:3000` 접속 및 관리자 계정 생성까지 완료됨.
-* 하지만 메인 화면에서 "모델이 설정되지 않았다"는 오류가 발생하며 Ollama에 설치된 모델 목록을 전혀 불러오지 못함.
+* `docker compose up -d`로 Open WebUI를 띄웠으나, 컨테이너 격리 네트워크 특성으로 인해 내부(UI)에서 외부 호스트의 Ollama 엔진(`127.0.0.1:11434`)에 접근하지 못하고 모델 설정 에러가 발생함.
+* 게다가 호스트 시스템의 Ollama 서비스 자체가 일시적으로 중단(`Connection refused`)되어 있었음.
 
-### 핵심 원인
-1. **포트 충돌 및 서비스 상태 미확인:** 호스트(리눅스 OS) 자체의 Ollama 서비스가 일시적으로 중단(`Connection refused`)되어 있었거나, 컨테이너 네트워크 구조와 포트(11434)가 비정상적으로 엉켜 있었음.
-2. **컨테이너 격리 네트워크의 한계:** Docker 컨테이너 내부에서 `127.0.0.1`이나 `localhost`를 호출하면 호스트 PC가 아닌 **컨테이너 자기 자신**을 가리키기 때문에 외부 Ollama 엔진에 접근할 수 없었음.
+### 핵심 해결책
+* Open WebUI 컨테이너의 네트워크를 격리하지 않고 호스트 PC의 네트워크를 그대로 공유하는 **`network_mode: "host"`** 옵션을 적용. 
+* 이를 통해 컨테이너 내부에서도 호스트의 `127.0.0.1:11434` 주소를 복잡한 우회 경로 없이 다이렉트로 찌를 수 있도록 해결함.
 
 ---
 
 ## 🛠️ 2. 단계별 문제 해결 과정 (살려낸 순서)
 
-### [Step 1] 좀비 컨테이너 및 네트워크 클린 초기화
-이전의 잘못된 세팅이나 백그라운드에 남은 네트워크 찌꺼기를 확실하게 제거하여 클린 상태를 만들었습니다.
+### [Step 1] 구 버전 컨테이너 및 네트워크 클린 초기화
+이전의 잘못 꼬여있던 컨테이너와 네트워크 찌꺼기를 확실하게 정리했습니다.
+
 ```bash
 cd ~/llm
 docker compose down
 docker rm -f open-webui ollama 2>/dev/null
 ```
 
-### [Step 2] 호스트 백엔드 엔진(Ollama) 정상 상태 복구
-가장 중요했던 단계로, 꺼져 있던 리눅스 호스트 시스템의 Ollama 서비스를 강제로 깨우고 상태를 모니터링했습니다.
+### [Step 2] 호스트 백엔드 엔진(Ollama) 서비스 기동
+꺼져 있던 리눅스 시스템의 Ollama 백엔드 서비스를 깨우고 정상 구동 상태를 확보했습니다.
 
 ```Bash
-# 1. 시스템 백그라운드 Ollama 서비스 기동
+# 1. 시스템 백그라운드 Ollama 서비스 시작
 sudo systemctl start ollama
 
 # 2. 서비스 상태가 'active (running)'인지 눈으로 확인
 sudo systemctl status ollama
 ```
 
-### [Step 3] 신호 무결성 테스트 (curl)
-통신이 완전히 살아났는지 루프백(Loopback) 신호를 던져 최종 검증했습니다.
+### [Step 3] 통신 신호 최종 검증 (curl)
+호스트 내부에서 11434 포트가 확실하게 열렸는지 신호를 던져 검증했습니다.
 
 ```Bash
 curl [http://127.0.0.1:11434](http://127.0.0.1:11434)
 ```
-성공 확인 메시지: Ollama is running 출력을 확인하여 백엔드가 완벽히 준비되었음을 인지함.
+성공 확인 메시지: Ollama is running 출력을 확인하여 백엔드 준비 완료를 판정함.
 
-### [Step 4] 정석(Standard Bridge) 기반의 docker-compose.yml 재설계
-공식 문서의 --network=host 방식보다 안전하고 유연한 브릿지 모드를 채택하고, 컨테이너에서 호스트로 나갈 수 있는 게이트웨이(host.docker.internal)를 강제로 이정표로 세워주었습니다.
+### [Step 4] 호스트 네트워크 모드 기반의 docker-compose.yml 최종 설계
+공식 문서의 가이드대로 네트워크 격리를 해제하는 설정을 반영했습니다.
 
-~/llm/docker-compose.yml 파일의 최종 구조는 다음과 같습니다.
+~/llm/docker-compose.yml 파일의 실제 최종 작동 구조는 다음과 같습니다.
 
 ```YAML
 services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
-    ports:
-      - "3000:8080"
-    extra_hosts:
-      - "host.docker.internal:host-gateway" # 👈 컨테이너 내부에서 호스트로 통하는 탈출구 개방
+    network_mode: "host"  # 👈 공식 문서의 --network=host와 동일 (네트워크 격리 해제)
     environment:
-      - OLLAMA_BASE_URL=[http://host.docker.internal:11434](http://host.docker.internal:11434) # 👈 실제 Ollama가 살아있는 호스트 주소 지정
+      - OLLAMA_BASE_URL=[http://127.0.0.1:11434](http://127.0.0.1:11434) # 👈 호스트 네트워크를 공유하므로 127.0.0.1 그대로 조준 가능
     volumes:
       - open-webui_data:/app/backend/data
     restart: always
@@ -772,9 +770,11 @@ services:
 volumes:
   open-webui_data:
 ```
+⚠️ 주의 (포트 매핑 생략의 이유)
+network_mode: "host" 환경에서는 ports: 옵션을 통한 포트 포워딩 기능이 작동하지 않습니다. 따라서 컨테이너가 사용하는 내부 기본 포트가 호스트 PC에 그대로 노출됩니다.
 
 ### [Step 5] 인프라 최종 기동
-모든 퍼즐 조각이 맞춰진 상태에서 서비스를 백그라운드로 실행했습니다.
+새로운 설정 파일을 기반으로 컨테이너를 실행했습니다.
 
 ```Bash
 docker compose up -d
@@ -782,16 +782,13 @@ docker compose up -d
 
 ## ✨ 3. 최종 결과 및 상시 체크리스트
 
-최종 접속 주소: http://localhost:3000
+* 실제 최종 접속 주소: http://localhost:8080 * 웹 브라우저에서 8080 포트로 정상 접속되며, 
+* 상단 모델 선택창에 deepseek-r1:32b, qwen2.5:32b 등의 고성능 라인업이 에러 없이 완벽하게 표기됩니다.
 
-이제 정상적으로 상단 모델 선택 팝업에 deepseek-r1:32b, qwen2.5:32b 등 Ollama에 설치해 둔 최고 사양의 모델들이 지연 없이 실시간으로 연동되어 작동합니다.
+💡 향후 시스템 재부팅 후 먹통일 때 자가 진단
+curl http://127.0.0.1:11434 입력 후 Ollama is running이 안 뜨면 sudo systemctl restart ollama 실행하기.
 
-💡 향후 동일 문제 발생 시 자가 진단 3원칙
-터미널에 curl http://127.0.0.1:11434 쳐서 Ollama is running이 나오는지 본다.
-
-안 나오면 sudo systemctl restart ollama로 엔진을 먼저 깨운다.
-
-Docker Compose 세팅에서 OLLAMA_BASE_URL이 host.docker.internal로 되어 있는지 확인한다.
+접속 주소는 무조건 3000이 아니라 8080 임을 기억하기.
 
 
 ---
