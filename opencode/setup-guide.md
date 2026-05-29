@@ -702,7 +702,7 @@ ollama pull llama3.1:8b
 
 >**추후 시스템을 재부팅하거나 설정이 꼬였을 때 언제든 참고하여 자가 정비하실 수 있도록**, <br>원인 분석부터 최종 해결까지의 디버깅 과정을 한눈에 보는 마크다운(.md) 문서로 일목요연하게 정리해 드립니다.
 
-# 🛠️ Open WebUI - Ollama 연동 실패 해결 및 디버깅 가이드 (Host Network 편)
+## 🛠️ Open WebUI - Ollama 연동 실패 해결 및 디버깅 가이드 (Host Network 편)
 
 본 문서는 **RTX 5090 (VRAM 24GB)** 리눅스(Ubuntu) 환경에서 Docker 기반의 **Open WebUI**가 호스트의 **Ollama** 백엔드 엔진을 인식하지 못하고 `Server Connection Error`가 발생했을 때, 공식 문서 가이드에 따라 **호스트 네트워크 모드**로 해결한 과정을 기록한 트러블슈팅 가이드입니다.
 
