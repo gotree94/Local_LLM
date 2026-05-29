@@ -700,6 +700,99 @@ ollama pull llama3.1:8b
 
 ---
 
+>**추후 시스템을 재부팅하거나 설정이 꼬였을 때 언제든 참고하여 자가 정비하실 수 있도록**, <br>원인 분석부터 최종 해결까지의 디버깅 과정을 한눈에 보는 마크다운(.md) 문서로 일목요연하게 정리해 드립니다.
+
+# 🛠️ Open WebUI - Ollama 연동 실패 해결 및 디버깅 가이드
+
+본 문서는 **RTX 5090 (VRAM 24GB)** 리눅스(Ubuntu) 환경에서 Docker 기반의 **Open WebUI**가 호스트의 **Ollama** 백엔드 엔진을 인식하지 못하고 `Server Connection Error` 및 모델 미설정 오류가 발생했을 때의 해결 과정을 기록한 트러블슈팅 가이드입니다.
+
+---
+
+## 🔍 1. 발생했던 문제 및 원인 분석
+
+### 현상
+* `docker compose up -d`로 Open WebUI는 정상 구동되어 `http://localhost:3000` 접속 및 관리자 계정 생성까지 완료됨.
+* 하지만 메인 화면에서 "모델이 설정되지 않았다"는 오류가 발생하며 Ollama에 설치된 모델 목록을 전혀 불러오지 못함.
+
+### 핵심 원인
+1. **포트 충돌 및 서비스 상태 미확인:** 호스트(리눅스 OS) 자체의 Ollama 서비스가 일시적으로 중단(`Connection refused`)되어 있었거나, 컨테이너 네트워크 구조와 포트(11434)가 비정상적으로 엉켜 있었음.
+2. **컨테이너 격리 네트워크의 한계:** Docker 컨테이너 내부에서 `127.0.0.1`이나 `localhost`를 호출하면 호스트 PC가 아닌 **컨테이너 자기 자신**을 가리키기 때문에 외부 Ollama 엔진에 접근할 수 없었음.
+
+---
+
+## 🛠️ 2. 단계별 문제 해결 과정 (살려낸 순서)
+
+### [Step 1] 좀비 컨테이너 및 네트워크 클린 초기화
+이전의 잘못된 세팅이나 백그라운드에 남은 네트워크 찌꺼기를 확실하게 제거하여 클린 상태를 만들었습니다.
+```bash
+cd ~/llm
+docker compose down
+docker rm -f open-webui ollama 2>/dev/null
+```
+
+### [Step 2] 호스트 백엔드 엔진(Ollama) 정상 상태 복구
+가장 중요했던 단계로, 꺼져 있던 리눅스 호스트 시스템의 Ollama 서비스를 강제로 깨우고 상태를 모니터링했습니다.
+
+```Bash
+# 1. 시스템 백그라운드 Ollama 서비스 기동
+sudo systemctl start ollama
+
+# 2. 서비스 상태가 'active (running)'인지 눈으로 확인
+sudo systemctl status ollama
+```
+
+### [Step 3] 신호 무결성 테스트 (curl)
+통신이 완전히 살아났는지 루프백(Loopback) 신호를 던져 최종 검증했습니다.
+
+```Bash
+curl [http://127.0.0.1:11434](http://127.0.0.1:11434)
+```
+성공 확인 메시지: Ollama is running 출력을 확인하여 백엔드가 완벽히 준비되었음을 인지함.
+
+### [Step 4] 정석(Standard Bridge) 기반의 docker-compose.yml 재설계
+공식 문서의 --network=host 방식보다 안전하고 유연한 브릿지 모드를 채택하고, 컨테이너에서 호스트로 나갈 수 있는 게이트웨이(host.docker.internal)를 강제로 이정표로 세워주었습니다.
+
+~/llm/docker-compose.yml 파일의 최종 구조는 다음과 같습니다.
+
+```YAML
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # 👈 컨테이너 내부에서 호스트로 통하는 탈출구 개방
+    environment:
+      - OLLAMA_BASE_URL=[http://host.docker.internal:11434](http://host.docker.internal:11434) # 👈 실제 Ollama가 살아있는 호스트 주소 지정
+    volumes:
+      - open-webui_data:/app/backend/data
+    restart: always
+
+volumes:
+  open-webui_data:
+```
+
+[Step 5] 인프라 최종 기동
+모든 퍼즐 조각이 맞춰진 상태에서 서비스를 백그라운드로 실행했습니다.
+
+Bash
+docker compose up -d
+✨ 3. 최종 결과 및 상시 체크리스트
+최종 접속 주소: http://localhost:3000
+
+이제 정상적으로 상단 모델 선택 팝업에 deepseek-r1:32b, qwen2.5:32b 등 Ollama에 설치해 둔 최고 사양의 모델들이 지연 없이 실시간으로 연동되어 작동합니다.
+
+💡 향후 동일 문제 발생 시 자가 진단 3원칙
+터미널에 curl http://127.0.0.1:11434 쳐서 Ollama is running이 나오는지 본다.
+
+안 나오면 sudo systemctl restart ollama로 엔진을 먼저 깨운다.
+
+Docker Compose 세팅에서 OLLAMA_BASE_URL이 host.docker.internal로 되어 있는지 확인한다.
+
+
+---
+
 → [메인 페이지로 돌아가기](README.md)
 → [하드웨어 상세 분석](hardware-specs.md)
 → [모델 추천 보기](model-recommendations.md)
