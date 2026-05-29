@@ -281,7 +281,8 @@ ollama pull deepseek-r1:32b     # 강력 추론
 ollama pull qwen2.5:32b         # 고품질
 
 # 한국어
-ollama pull exaone3.5:8b
+ollama pull exaone3.5:8b   # 동작 안됨
+ollama pull exaone3.5:7.8b
 
 # 임베딩 (RAG용)
 ollama pull nomic-embed-text
