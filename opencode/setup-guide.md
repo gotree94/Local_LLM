@@ -468,7 +468,24 @@ ggml_cuda_init: found 1 CUDA devices (Total VRAM: 23957 MiB):
 | llama 8B Q4_K - Medium         |   4.58 GiB |     8.03 B | CUDA       |  99 |           tg128 |         67.59 ± 3.34 |
 
 build: 6ed481eea (9413)
+```
 
+**Step 1: DeepSeek R1 32B Q4_K_M 모델 다운로드**
+   * 먼저 허깅페이스 저장소에서 32B GGUF 모델을 models/ 폴더 안으로 다운로드합니다.
+
+```Bash
+wget -O models/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf
+```
+* (약 20.0GB 용량이므로 다운로드 완료까지 시간이 다소 소요됩니다. 터미널을 그대로 유지해 주세요.)
+
+**Step 2: 벤치마크 실행 (VRAM 100% 완전 적재)**
+   * 다운로드가 완료되면 다음 명령어로 벤치마크를 수행합니다. 24GB VRAM을 통째로 활용할 것이므로 -ngl 99를 그대로 주시면 됩니다.
+
+```Bash
+./build/bin/llama-bench \
+    -m ./models/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf \
+    -ngl 99 \
+    -n 128
 ```
 
 ### 9.4 예상 성능 (RTX 5090 기준)
