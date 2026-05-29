@@ -318,6 +318,25 @@ cd vllm
 pip install -e .
 ```
 
+* vLLM은 의존성 패키지(PyTorch, Triton 등)가 무겁고 복잡하기 때문에
+* Anaconda base 환경에 직접 빌드하는 것은 나중에 다른 프로젝트와 패키지 충돌을 일으킬 확률이 매우 높습니다.
+* 가상환경을 분리하는 것을 권장합니다.
+
+```Bash
+# 1. vLLM 전용 콘다 가상환경 생성 (Python 3.10 또는 3.11 추천)
+conda create -n vllm python=3.10 -y
+conda activate vllm
+
+# 2. 가상환경 내 최신 빌드 도구 및 필수 패키지 설치
+pip install --upgrade pip setuptools wheel
+
+# 3. vLLM 디렉토리로 이동 후 다시 빌드
+cd ~/llm/vllm
+pip install -e .
+```
+
+
+
 ### OpenAI 호환 서버 실행
 
 ```bash
