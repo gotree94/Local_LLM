@@ -424,6 +424,15 @@ nvidia-smi -l 1
     -n 128
 ```
 
+* 실제 GGUF 모델 파일 다운로드
+   - Hugging Face에서 공식 아키텍처에 맞춰 잘 컨버팅된 Llama 3.1 8B Instruct Q4_K_M 파일을 다운로드합니다.
+   - 관리하기 편하게 models/ 폴더 안에 저장하도록 경로를 지정했습니다.
+
+```
+wget -O models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+```
+
+
 출력 예시:
 ```
 | model                          | size | backend | ngl | t/s |
