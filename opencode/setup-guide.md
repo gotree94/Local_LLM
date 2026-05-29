@@ -455,6 +455,22 @@ wget -O models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf https://huggingface.co/bar
 | llama 8B Q4_K_M                | 4.9 GB| CUDA    | 99  | 142.45 ± 2.34 |
 ```
 
+```
+(base) gotree94@gotree94-ROG-Strix-SCAR-16-G635LX-G635LX:~/llm/llama.cpp$ ./build/bin/llama-bench \
+    -m ./models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf \
+    -ngl 99 \
+    -n 128
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 23957 MiB):
+  Device 0: NVIDIA GeForce RTX 5090 Laptop GPU, compute capability 12.0, VMM: yes, VRAM: 23957 MiB
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |
+| llama 8B Q4_K - Medium         |   4.58 GiB |     8.03 B | CUDA       |  99 |           pp512 |     4457.91 ± 313.88 |
+| llama 8B Q4_K - Medium         |   4.58 GiB |     8.03 B | CUDA       |  99 |           tg128 |         67.59 ± 3.34 |
+
+build: 6ed481eea (9413)
+
+```
+
 ### 9.4 예상 성능 (RTX 5090 기준)
 
 | 모델 | 양자화 | ollama | vLLM (FP8) | llama.cpp | ExLlamaV2 |
