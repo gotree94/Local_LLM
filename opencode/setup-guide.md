@@ -290,13 +290,13 @@ ollama pull exaone3.5:32b #(RTX 5090 환경에서 완전 적재 가능한 고성
 ollama pull nomic-embed-text
 ```
 
-# 🚀 RTX 5090 (24GB VRAM) 환경 최적화 로컬 LLM 추천 모델 리스트
+## 🚀 RTX 5090 (24GB VRAM) 환경 최적화 로컬 LLM 추천 모델 리스트
 
-현재 시스템 사양(**RTX 5090 Laptop GPU / VRAM 24GB**)은 로컬 AI 환경 구축에 있어 최상위 스펙입니다. 24GB VRAM을 적극적으로 활용하여 **32B~35B 체급의 고성능 모델을 VRAM에 100% 완전 적재(Full Load)**하여 사용하는 것을 목표로 라인업을 구성했습니다.
+>현재 시스템 사양(**RTX 5090 Laptop GPU / VRAM 24GB**)은 로컬 AI 환경 구축에 있어 최상위 스펙입니다. <br>24GB VRAM을 적극적으로 활용하여 **32B~35B 체급의 고성능 모델을 VRAM에 100% 완전 적재(Full Load)**하여 사용하는 것을 목표로 라인업을 구성했습니다.
 
 ---
 
-## 1. 🌟 주력 고성능 추론 모델 (Main Stream)
+### 1. 🌟 주력 고성능 추론 모델 (Main Stream)
 > VRAM 24GB를 꽉 채워 쓰며 최고의 지능을 발휘하는 32B급 라인업입니다. 메인 비서로 사용을 권장합니다.
 
 * **`ollama pull deepseek-r1:32b`**
@@ -311,7 +311,7 @@ ollama pull nomic-embed-text
 
 ---
 
-## 2. 💻 개발 특화 모델 (Software Engineering)
+### 2. 💻 개발 특화 모델 (Software Engineering)
 > 단순한 스크립트 작성을 넘어 대규모 코드 리팩토링 및 아키텍처 설계에 적합한 코딩 전용 모델입니다.
 
 * **`ollama pull qwen2.5-coder:32b`** 🔥 *강력 추천*
@@ -320,7 +320,7 @@ ollama pull nomic-embed-text
 
 ---
 
-## 3. ⚡ 데일리 고속 테스트 모델 (Lightweight & Speed)
+### 3. ⚡ 데일리 고속 테스트 모델 (Lightweight & Speed)
 > API 연동 테스트, 로컬 멀티 에이전트 환경 구축, 혹은 1초 이내의 빠른 답변이 필요할 때 적합한 경량 모델입니다.
 
 * **`ollama pull llama3.1:8b`** (또는 최신 `llama3.3:8b`)
@@ -334,7 +334,7 @@ ollama pull nomic-embed-text
 
 ---
 
-## 🧠 4. 임베딩 & RAG 모델 (Knowledge Base)
+### 🧠 4. 임베딩 & RAG 모델 (Knowledge Base)
 > 로컬의 개인 문서(PDF, Markdown 등)를 학습시켜 나만의 지식 창고를 구축할 때 텍스트를 벡터화하는 필수 모델입니다.
 
 * **`ollama pull nomic-embed-text`**
@@ -344,13 +344,15 @@ ollama pull nomic-embed-text
 
 ---
 
-## 💡 RTX 5090 사용자 전용 인프라 운영 팁
+### 💡 RTX 5090 사용자 전용 인프라 운영 팁
 
 1.  **자동 VRAM 관리 및 스와핑**
     * Ollama는 여러 모델을 설치해 두어도 동시에 실행하지 않으면 VRAM을 점유하지 않습니다. 
     * 마지막 요청 후 기본 **5분 동안** 모델을 VRAM에 대기시킨 뒤 자동으로 메모리에서 내려주므로(Unload), 24GB 용량 초과 걱정 없이 위 리스트를 편하게 다 다운받아 두셔도 안전합니다.
 2.  **vLLM 및 EXL2 포맷 확장성**
     * 현재 사용 중인 `llama.cpp(GGUF)` 방식 외에도, 단일 최고 스펙인 5090 환경에서는 NVIDIA 전용 고속 추론 백엔드인 **vLLM**이나 **EXL2(ExLlamaV2)** 엔진을 활용하면 GGUF 대비 **약 1.5배~2배 이상 빠른 극한의 초당 토큰수(t/s)**를 뽑아낼 수 있습니다.
+
+---
 
 ### 실행
 
