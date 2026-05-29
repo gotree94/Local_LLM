@@ -283,6 +283,9 @@ ollama pull qwen2.5:32b         # 고품질
 # 한국어
 ollama pull exaone3.5:8b   # 동작 안됨
 ollama pull exaone3.5:7.8b
+ollama run exaone3.5:2.4b #(소형 장치 최적화 버전)
+ollama run exaone3.5:7.8b #(기본/가장 많이 쓰이는 버전)
+ollama run exaone3.5:32b #(RTX 5090 환경에서 완전 적재 가능한 고성능 버전)
 
 # 임베딩 (RAG용)
 ollama pull nomic-embed-text
